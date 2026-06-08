@@ -20,13 +20,12 @@ pip install "kt-py-logger @ git+ssh://git@github.com/dataxquare/kt-py-logger.git
 ```
 
 ```toml
-# pyproject.toml (PEP 621) — using the host alias from your ~/.ssh/config
+# pyproject.toml (PEP 621)
 dependencies = [
-    "kt-py-logger @ git+ssh://git@keytrends/dataxquare/kt-py-logger.git@v0.1.0",
+    "kt-py-logger @ git+ssh://git@github.com/dataxquare/kt-py-logger.git@v0.1.0",
 ]
 ```
 
-> The `keytrends` host is an SSH alias (see `~/.ssh/config`) pointing at
 > `github.com` with the org deploy key. CI/Docker builds need that key (or a PAT)
 > to install from the private repo.
 
