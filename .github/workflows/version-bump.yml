@@ -1,0 +1,80 @@
+name: Auto version bump
+
+# On every push to main, derive the next semver from the commit messages since
+# the last tag (Conventional Commits), bump pyproject.toml, and push a vX.Y.Z tag.
+# Pushes made with GITHUB_TOKEN do not retrigger workflows, and the bump commit is
+# tagged [skip ci] — so this never loops.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: version-bump
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    # Skip our own bump commit (belt-and-suspenders alongside the no-retrigger rule).
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine bump level from commits since last tag
+        id: bump
+        run: |
+          set -euo pipefail
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          range=""
+          [ -n "$last_tag" ] && range="${last_tag}..HEAD"
+          log=$(git log --format=%B ${range})
+
+          level=patch
+          # feat: -> minor
+          if printf '%s\n' "$log" | grep -qE '^[[:space:]]*feat(\(.+\))?:'; then
+            level=minor
+          fi
+          # BREAKING CHANGE, or a "type!:" marker -> major (wins over minor)
+          if printf '%s\n' "$log" | grep -qE 'BREAKING CHANGE' \
+             || printf '%s\n' "$log" | grep -qE '^[[:space:]]*[a-z]+(\(.+\))?!:'; then
+            level=major
+          fi
+          echo "level=$level" >> "$GITHUB_OUTPUT"
+          echo "Last tag: ${last_tag:-<none>} · bump: $level"
+
+      - name: Compute next version
+        id: ver
+        run: |
+          set -euo pipefail
+          cur=$(grep -E '^version' pyproject.toml | head -1 | cut -d'"' -f2)
+          IFS='.' read -r MA MI PA <<< "$cur"
+          case "${{ steps.bump.outputs.level }}" in
+            major) MA=$((MA+1)); MI=0; PA=0 ;;
+            minor) MI=$((MI+1)); PA=0 ;;
+            patch) PA=$((PA+1)) ;;
+          esac
+          next="${MA}.${MI}.${PA}"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "Bumping ${cur} -> ${next}"
+
+      - name: Apply bump, commit, tag, push
+        run: |
+          set -euo pipefail
+          next="${{ steps.ver.outputs.next }}"
+          # Replace only the first `version = "..."` line (the [project] one).
+          sed -i -E "0,/^version = \".*\"/s//version = \"${next}\"/" pyproject.toml
+
+          git config user.name 'Git bot'
+          git config user.email 'bot@noreply.github.com'
+          git add pyproject.toml
+          git commit -m "(chore)[skip ci] bump version to ${next}"
+          git tag -a "v${next}" -m "kt-py-logger v${next}"
+          git push origin HEAD:main --follow-tags

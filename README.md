@@ -73,3 +73,16 @@ editing each service's config. Recognised `logger` keys:
 
 Tagged releases (`vMAJOR.MINOR.PATCH`). Consumers pin a tag in their dependency
 URL and bump deliberately.
+
+Versioning is **automatic** (`.github/workflows/version-bump.yml`): every push to
+`main` derives the next version from the commit messages since the last tag using
+[Conventional Commits](https://www.conventionalcommits.org/) —
+
+| commit | bump |
+| --- | --- |
+| `feat: …` | minor |
+| `fix: …` / anything else | patch |
+| `feat!: …` / `BREAKING CHANGE` | major |
+
+The workflow bumps `pyproject.toml`, commits `[skip ci]`, and pushes a `vX.Y.Z`
+tag. Write commit messages accordingly.
