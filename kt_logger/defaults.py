@@ -15,8 +15,9 @@ to one service belongs in that service's JSON, not here.
 # (e.g. session/invocation/agent) belong in that service's ``format`` config,
 # alongside ``context_defaults`` for the fields it references. ``location`` and
 # ``kind_fmt`` are filled by the enrich filter (blank where not applicable).
-# Colour tags only render on a TTY; plain-text viewers (e.g. Portainer) see the
-# bare text, which is why the kind column is padded for vertical alignment.
+# The stdout sink forces ``colorize=True`` (see :mod:`kt_logger.setup`) so colour
+# renders even off a TTY (Docker/Portainer). The kind column is padded so columns
+# stay aligned in viewers that strip ANSI anyway (log files, plain-text tails).
 DEFAULT_FORMAT = (
     "[<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>] "
     "[<level>{level:<7}</level>] "

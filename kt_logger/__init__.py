@@ -28,12 +28,14 @@ from kt_logger.context import (
     unbind_context,
     unregister_field,
 )
+from kt_logger.executors import ContextThreadPoolExecutor
 from kt_logger.intercept import DropBelowWarning, InterceptHandler
 from kt_logger.setup import CustomizeLogger, make_logger
 
 __all__ = [
     "make_logger",
     "CustomizeLogger",
+    "ContextThreadPoolExecutor",
     "InterceptHandler",
     "DropBelowWarning",
     "bind_context",
