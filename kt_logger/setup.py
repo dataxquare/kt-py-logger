@@ -83,6 +83,8 @@ def make_logger(config_path: Path | str, level: str | None = None):
         level=effective_level,
         format=fmt,
         filter=enrich,
+        colorize=True,  # force ANSI: stdout isn't a TTY under Docker/Portainer,
+                        # so loguru's autodetect would otherwise strip colour markup
     )
     if cfg.get("path"):
         logger.add(
